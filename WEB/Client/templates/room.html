@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with {{ target_user }}</title>
+    <style>
+        /* 전체 페이지 스타일 */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #87ceeb; /* 하늘색 배경 */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* 채팅 컨테이너 */
+        .chat-container {
+            background-color: #ffffff; /* 흰색 박스 */
+            width: 400px;
+            height: 600px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 헤더 */
+        .chat-header {
+            background-color: #0056b3; /* 진한 하늘색 */
+            color: #ffffff;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header button {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .chat-header button:hover {
+            text-decoration: underline;
+        }
+
+        /* 채팅 메시지 박스 */
+        #chat-box {
+            flex: 1;
+            padding: 10px;
+            overflow-y: scroll;
+            background-color: #f0f8ff; /* 밝은 하늘색 */
+        }
+
+        /* 메시지 스타일 */
+        .message {
+            margin: 5px 0;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .message.you {
+            justify-content: flex-end;
+        }
+
+        .message.bubble {
+            max-width: 70%;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .message.you .bubble {
+            background-color: #d1ecf1; /* 연한 하늘색 */
+            color: #000;
+        }
+
+        .message.other .bubble {
+            background-color: #ffffff; /* 흰색 */
+            color: #000;
+            border: 1px solid #ddd;
+        }
+
+        .time {
+            font-size: 10px;
+            color: #888;
+            margin: 0 5px;
+        }
+
+        /* 입력 박스 */
+        #chat-input {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+            background-color: #ffffff; /* 흰색 */
+        }
+
+        #message {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        #send-button {
+            padding: 10px 20px;
+            background-color: #007bff; /* 버튼 하늘색 */
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #send-button:hover {
+            background-color: #0056b3; /* 버튼 진한 하늘색 */
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- 헤더 -->
+        <div class="chat-header">
+            <span>Chat with {{ target_user }}</span>
+            <button id="back-button">Back</button>
+        </div>
+
+        <!-- 채팅 메시지 -->
+        <div id="chat-box"></div>
+
+        <!-- 입력 박스 -->
+        <div id="chat-input">
+            <input type="text" id="message" placeholder="Type your message here..." />
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chat-box');
+
+        // 메시지 주기적으로 갱신
+        setInterval(() => {
+            fetch(`/get_messages?target_user={{ target_user }}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        chatBox.innerHTML = ''; // 기존 메시지 초기화
+                        data.messages.forEach(msg => {
+                            const isYou = msg.sender === 'You'; // 본인이 보낸 메시지인지 확인
+                            chatBox.innerHTML += `
+                                <div class="message ${isYou ? 'you' : 'other'}">
+                                    <div class="bubble">${msg.text}</div>
+                                    <div class="time">${msg.time}</div>
+                                </div>`;
+                        });
+                        chatBox.scrollTop = chatBox.scrollHeight; // 스크롤 아래로 이동
+                    } else {
+                        console.error('Failed to fetch messages:', data.message);
+                    }
+                })
+                .catch(err => console.error('Error fetching messages:', err));
+        }, 1000); // 1초마다 갱신
+
+        // 메시지 전송
+        document.getElementById('send-button').addEventListener('click', function() {
+            const message = document.getElementById('message').value;
+            if (message.trim() === '') return;
+
+            fetch('/send_message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: message,
+                    target_user: '{{ target_user }}'
+                })
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.status === 'success') {
+                      chatBox.innerHTML += `
+                          <div class="message you">
+                              <div class="bubble">${message}</div>
+                              <div class="time">${new Date().toLocaleTimeString()}</div>
+                          </div>`;
+                      chatBox.scrollTop = chatBox.scrollHeight; // 스크롤 아래로 이동
+                      document.getElementById('message').value = ''; // 입력창 초기화
+                  } else {
+                      alert('Failed to send message: ' + data.message);
+                  }
+              })
+              .catch(err => console.error('Error sending message:', err));
+        });
+
+        // 뒤로가기 버튼 클릭
+        document.getElementById('back-button').addEventListener('click', function() {
+            window.location.href = 'http://192.168.0.19:5001/chat_rooms';
+        });
+    </script>
+</body>
+</html>
+
