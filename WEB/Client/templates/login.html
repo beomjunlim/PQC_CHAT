@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        /* 전체 페이지 스타일 */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #87ceeb; /* 하늘색 배경 */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* 로그인 박스 */
+        .login-container {
+            background-color: #ffffff; /* 흰색 박스 */
+            width: 375px; /* 스마트폰 너비 */
+            height: 667px; /* 스마트폰 높이 */
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box; /* 박스 크기 계산 */
+        }
+
+        /* 로고 스타일 */
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333333;
+            margin-bottom: 30px;
+        }
+
+        /* 입력 필드 스타일 */
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box; /* 박스 크기 계산 */
+        }
+
+        /* 버튼 스타일 */
+        .login-button, .register-button {
+            width: 100%;
+            padding: 10px;
+            background-color: #333333; /* 다크 그레이 */
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            box-sizing: border-box; /* 박스 크기 계산 */
+        }
+
+        .login-button:hover {
+            background-color: #555555; /* 밝은 회색 */
+        }
+
+        .register-button {
+            margin-top: 10px;
+            background-color: #007bff; /* 파란색 */
+        }
+
+        .register-button:hover {
+            background-color: #0056b3; /* 짙은 파란색 */
+        }
+
+        /* 하단 텍스트 */
+        .footer {
+            font-size: 14px;
+            color: #777777;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">Tor PQC Chat</div>
+        <form id="login-form">
+            <input type="text" id="node_name" name="node_name" class="input-field" placeholder="Enter your ID" required>
+            <input type="password" id="password" name="password" class="input-field" placeholder="Enter your Password" required>
+            <button type="submit" class="login-button">Login</button>
+        </form>
+        <button onclick="window.location.href='/register'" class="register-button">Sign Up</button>
+        <div class="footer">Welcome to Tor PQC Chat App</div>
+    </div>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // 기본 폼 제출 동작 막기
+
+            const node_name = document.getElementById('node_name').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            fetch('/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ node_name, password })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // 실패 시 JSON 응답에서 메시지를 추출하여 알림창 표시
+                    return response.json().then(data => {
+                        alert(data.message);
+                        throw new Error(data.message);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.href = '/chat_rooms'; // 성공 시 채팅방 페이지로 이동
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+</html>
+
